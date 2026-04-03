@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "An e-commerce product item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Product name" },
+        "category": { "type": "string", "description": "Product category" },
+        "price": { "type": "number", "description": "Current price" },
+        "oldPrice": { "type": "number", "description": "Original price before discount" },
+        "rating": { "type": "number", "description": "Average rating" },
+        "reviews": { "type": "integer", "description": "Number of reviews" },
+        "image": { "type": "string", "description": "URL to product image" },
+        "isNew": { "type": "boolean", "description": "Whether the product is a new arrival" },
+        "isBestSeller": { "type": "boolean", "description": "Whether the product is a best seller" },
+        "isTopRated": { "type": "boolean", "description": "Whether the product is top rated" },
+        "discount": { "type": "number", "description": "Discount percentage" },
+        "featured": { "type": "boolean", "description": "Whether the product is featured" }
+      },
+      "required": ["name", "category", "price", "image"]
+    },
+    "UserUpload": {
+      "title": "User Upload",
+      "description": "An image uploaded by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who uploaded the image" },
+        "imageUrl": { "type": "string", "description": "The URL of the uploaded image" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the image was uploaded" },
+        "fileName": { "type": "string", "description": "Original name of the file" }
+      },
+      "required": ["userId", "imageUrl", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of all products in the store"
+    },
+    "/uploads/{uploadId}": {
+      "schema": "UserUpload",
+      "description": "Collection of user-uploaded images"
+    }
+  }
+}
