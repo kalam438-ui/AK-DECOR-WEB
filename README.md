@@ -1,20 +1,75 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Modern E-Commerce Store
 
-# Run and deploy your AI Studio app
+A high-performance, responsive e-commerce application built with React, TypeScript, and Tailwind CSS.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/a4a8574d-f4bc-47c9-9e34-6e0c5e7af440
+- 🛒 **Shopping Cart**: Add, remove, and manage items in your cart.
+- 📦 **Product Management**: Admin dashboard to add, edit, and delete products.
+- 🔍 **Product Details**: Dedicated pages for every product with rich information.
+- 📱 **Responsive Design**: Fully optimized for mobile, tablet, and desktop.
+- 🔥 **Firebase Integration**: Real-time data storage and authentication.
+- 🎨 **Modern UI**: Clean, professional design using Tailwind CSS and Lucide icons.
 
-## Run Locally
+## Getting Started
 
-**Prerequisites:**  Node.js
+To run this project locally:
 
+1. **Clone the repository**:
+   ```bash
+   git clone <your-github-repo-url>
+   cd <repo-name>
+   ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Set up Environment Variables**:
+   Create a `.env` file in the root directory and add your Firebase configuration:
+   ```env
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   ```
+
+4. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+## Deployment to GitHub Pages
+
+To deploy this app to GitHub Pages:
+
+1. Install the `gh-pages` package:
+   ```bash
+   npm install gh-pages --save-dev
+   ```
+
+2. Add the following to your `package.json`:
+   ```json
+   "homepage": "https://<your-username>.github.io/<repo-name>",
+   "scripts": {
+     "predeploy": "npm run build",
+     "deploy": "gh-pages -d dist"
+   }
+   ```
+
+3. Run the deploy command:
+   ```bash
+   npm run deploy
+   ```
+
+## License
+
+MIT

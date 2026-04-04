@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, handleFirestoreError, OperationType } from '../firebase';
+import { db, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, handleFirestoreError, OperationType, ref, uploadBytes, getDownloadURL, storage } from '../firebase';
 import { Product } from '../types';
-import { Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, ShieldCheck, Upload, Image as ImageIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 
@@ -16,6 +16,9 @@ export default function Admin() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -66,6 +69,8 @@ export default function Admin() {
   }
 
   const handleOpenModal = (product: Product | null = null) => {
+    setImageFile(null);
+    setImagePreview(null);
     if (product) {
       setEditingProduct(product);
       setFormData({
@@ -101,16 +106,44 @@ export default function Admin() {
     setError(null);
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
 
     try {
+      let finalImageUrl = formData.image;
+
+      // Upload image if a new file is selected
+      if (imageFile) {
+        setIsUploading(true);
+        const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        finalImageUrl = await getDownloadURL(snapshot.ref);
+        setIsUploading(false);
+      }
+
+      const productData = {
+        ...formData,
+        image: finalImageUrl
+      };
+
       if (editingProduct) {
-        await updateDoc(doc(db, 'products', editingProduct.id), formData);
+        await updateDoc(doc(db, 'products', editingProduct.id), productData);
       } else {
-        await addDoc(collection(db, 'products'), formData);
+        await addDoc(collection(db, 'products'), productData);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -118,6 +151,7 @@ export default function Admin() {
       setError("Failed to save product. Check permissions.");
     } finally {
       setIsSaving(false);
+      setIsUploading(false);
     }
   };
 
@@ -287,15 +321,59 @@ export default function Admin() {
                     className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
                   />
                 </div>
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Image URL</label>
-                  <input 
-                    required
-                    type="url" 
-                    value={formData.image}
-                    onChange={(e) => setFormData({...formData, image: e.target.value})}
-                    className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
-                  />
+                <div className="md:col-span-2 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Product Image</label>
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Image Preview */}
+                      <div className="w-full md:w-40 h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative group">
+                        {(imagePreview || formData.image) ? (
+                          <img 
+                            src={imagePreview || formData.image} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="text-gray-300" size={40} />
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <label className="cursor-pointer p-2 bg-white rounded-full text-gray-900 hover:bg-[#0066cc] hover:text-white transition-all">
+                            <Upload size={20} />
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* URL Input as fallback */}
+                      <div className="flex-grow space-y-2">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">Or paste Image URL</p>
+                        <input 
+                          type="url" 
+                          placeholder="https://example.com/image.jpg"
+                          value={formData.image}
+                          onChange={(e) => {
+                            setFormData({...formData, image: e.target.value});
+                            setImageFile(null);
+                            setImagePreview(null);
+                          }}
+                          className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
+                        />
+                        <div className="mt-4">
+                          <label className="inline-flex items-center gap-2 cursor-pointer bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition-all">
+                            <Upload size={16} className="text-[#0066cc]" />
+                            <span className="text-xs font-bold text-gray-700">Upload from Device</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                          </label>
+                          {imageFile && (
+                            <p className="mt-2 text-[10px] text-green-600 font-bold flex items-center gap-1">
+                              <Check size={12} />
+                              {imageFile.name} selected
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -338,7 +416,7 @@ export default function Admin() {
                   className="flex-grow bg-[#0066cc] text-white py-4 rounded-xl font-bold hover:bg-[#0052a3] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSaving && <Loader2 className="animate-spin" size={20} />}
-                  {isSaving ? "Saving..." : "Save Product"}
+                  {isSaving ? (isUploading ? "Uploading..." : "Saving...") : "Save Product"}
                 </button>
               </div>
             </form>
