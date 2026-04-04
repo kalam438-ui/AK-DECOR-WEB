@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, db } from '../firebase';
 import { Product } from '../types';
 import { motion } from 'motion/react';
-import { ShoppingCart, ArrowLeft, Star, ShieldCheck, Truck, RotateCcw, Loader2 } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Star, ShieldCheck, Truck, RotateCcw, Loader2, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { cn } from '../lib/utils';
+
+const WHATSAPP_NUMBER = "+1234567890"; // Replace with your actual WhatsApp number
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +16,13 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+
+  const handleWhatsAppBuy = () => {
+    if (!product) return;
+    const message = `Hello PressMart! I'm interested in buying:\n\n*${product.name}*\nPrice: $${product.price.toFixed(2)}\nCategory: ${product.category}\n\nPlease let me know how to proceed!`;
+    const fullMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}?text=${fullMessage}`, '_blank');
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -135,8 +144,12 @@ export default function ProductDetail() {
                   </>
                 )}
               </button>
-              <button className="h-14 px-8 rounded-2xl border-2 border-gray-200 font-black text-gray-900 hover:border-[#0066cc] hover:text-[#0066cc] transition-all">
-                Buy Now
+              <button 
+                onClick={handleWhatsAppBuy}
+                className="h-14 px-8 rounded-2xl border-2 border-[#25D366] text-[#25D366] font-black hover:bg-[#25D366] hover:text-white transition-all flex items-center gap-2"
+              >
+                <MessageCircle size={20} />
+                Buy via WhatsApp
               </button>
             </div>
 

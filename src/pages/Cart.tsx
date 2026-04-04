@@ -1,12 +1,25 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, CreditCard } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
+
+const WHATSAPP_NUMBER = "+1234567890"; // Replace with your actual WhatsApp number
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
   const navigate = useNavigate();
+
+  const handleWhatsAppOrder = () => {
+    const messageHeader = "Hello PressMart! I'd like to place an order:\n\n";
+    const itemsList = cart.map(item => 
+      `• ${item.name} (x${item.quantity}) - $${(item.price * item.quantity).toFixed(2)}`
+    ).join('\n');
+    const footer = `\n\nTotal Items: ${totalItems}\nTotal Price: $${totalPrice.toFixed(2)}\n\nPlease let me know the next steps!`;
+    
+    const fullMessage = encodeURIComponent(messageHeader + itemsList + footer);
+    window.open(`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}?text=${fullMessage}`, '_blank');
+  };
 
   if (cart.length === 0) {
     return (
@@ -115,13 +128,16 @@ export default function Cart() {
                 </div>
               </div>
 
-              <button className="w-full bg-[#0066cc] text-white h-14 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-[#0052a3] hover:shadow-xl hover:-translate-y-1 transition-all">
-                <CreditCard size={24} />
-                Checkout
+              <button 
+                onClick={handleWhatsAppOrder}
+                className="w-full bg-[#25D366] text-white h-14 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-[#128C7E] hover:shadow-xl hover:-translate-y-1 transition-all"
+              >
+                <MessageCircle size={24} />
+                Order via WhatsApp
               </button>
               
-              <p className="text-center text-gray-400 text-xs mt-6">
-                Secure checkout powered by PressMart. All transactions are encrypted.
+              <p className="text-center text-gray-400 text-xs mt-6 uppercase tracking-widest font-bold">
+                Fast & Secure Ordering
               </p>
             </div>
           </div>
