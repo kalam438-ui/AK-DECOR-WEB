@@ -1,119 +1,188 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Product, MOCK_PRODUCTS } from '../types';
+import { ProductCard } from '../components/ProductCard';
+import { db, collection, onSnapshot, query, orderBy, handleFirestoreError, OperationType, where } from '../firebase';
+import { Search, Grid, List as ListIcon } from 'lucide-react';
+import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
-import { Palette, Layout, Box, Sparkles, Layers, MousePointer2 } from 'lucide-react';
-
-const designFeatures = [
-  {
-    icon: <Palette className="text-[#0066cc]" size={32} />,
-    title: "Color Theory",
-    description: "We use a sophisticated palette that balances professional trust with vibrant energy."
-  },
-  {
-    icon: <Layout className="text-[#0066cc]" size={32} />,
-    title: "Grid Systems",
-    description: "Our layouts are built on a precise 12-column grid for perfect alignment across all devices."
-  },
-  {
-    icon: <Box className="text-[#0066cc]" size={32} />,
-    title: "Component Library",
-    description: "A robust set of reusable UI components ensures consistency and speed."
-  },
-  {
-    icon: <Sparkles className="text-[#0066cc]" size={32} />,
-    title: "Micro-interactions",
-    description: "Subtle animations and transitions that guide the user and provide feedback."
-  },
-  {
-    icon: <Layers className="text-[#0066cc]" size={32} />,
-    title: "Visual Hierarchy",
-    description: "Intentional use of scale, color, and spacing to prioritize information."
-  },
-  {
-    icon: <MousePointer2 className="text-[#0066cc]" size={32} />,
-    title: "Accessibility",
-    description: "Designed with inclusivity in mind, meeting WCAG standards for contrast and navigation."
-  }
-];
 
 export default function Design() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('newest');
+  const [pageContent, setPageContent] = useState<any>(null);
+
+  useEffect(() => {
+    const q = query(collection(db, 'products'), orderBy('name'));
+    
+    const unsubProducts = onSnapshot(q, (snapshot) => {
+      const firestoreProducts: Product[] = [];
+      snapshot.forEach((doc) => {
+        firestoreProducts.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      
+      if (firestoreProducts.length === 0) {
+        setProducts(MOCK_PRODUCTS);
+      } else {
+        setProducts(firestoreProducts);
+      }
+      setLoading(false);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'products');
+      setProducts(MOCK_PRODUCTS);
+      setLoading(false);
+    });
+
+    const pageQ = query(collection(db, 'page_content'), where('pageId', '==', 'design'));
+    const unsubPage = onSnapshot(pageQ, (snapshot) => {
+      if (!snapshot.empty) {
+        setPageContent(snapshot.docs[0].data());
+      }
+    });
+
+    return () => {
+      unsubProducts();
+      unsubPage();
+    };
+  }, []);
+
+  const categories = ['All', ...new Set(products.map(p => p.category))];
+
+  const filteredProducts = products
+    .filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'price-low') return a.price - b.price;
+      if (sortBy === 'price-high') return b.price - a.price;
+      if (sortBy === 'rating') return b.rating - a.rating;
+      return 0;
+    });
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="bg-gray-900 text-white py-24 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#0066cc] via-transparent to-transparent"></div>
-        </div>
+      {/* Page Header */}
+      <div className="relative bg-gray-900 text-white py-20 overflow-hidden border-b border-gray-100">
+        {pageContent?.heroImage && (
+          <div className="absolute inset-0 opacity-40">
+            <img src={pageContent.heroImage} className="w-full h-full object-cover" alt="" />
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <motion.div
+          <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
+            className="text-5xl font-black mb-2 uppercase"
           >
-            <h1 className="text-6xl font-black mb-6 tracking-tight">Our Design Philosophy</h1>
-            <p className="text-xl text-gray-400 leading-relaxed">
-              At PressMart, design is not just how it looks, but how it works. We believe in creating 
-              interfaces that are intuitive, beautiful, and accessible to everyone.
-            </p>
-          </motion.div>
+            {pageContent?.heroTitle || "Design Gallery"}
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-gray-300 text-lg max-w-2xl"
+          >
+            {pageContent?.heroSubtitle || "Explore our portfolio of modern interior design and bespoke furniture solutions."}
+          </motion.p>
         </div>
-      </section>
+      </div>
 
-      {/* Features Grid */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {designFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="p-8 rounded-2xl border border-gray-100 hover:border-[#0066cc]/20 hover:bg-blue-50/30 transition-all group"
-              >
-                <div className="mb-6 transform group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Sidebar Filters */}
+          <aside className="w-full lg:w-64 space-y-8">
+            <div>
+              <h3 className="font-bold text-gray-900 mb-4 uppercase text-xs tracking-widest">Search Designs</h3>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Search designs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full border border-gray-200 px-4 py-2 text-sm focus:ring-1 focus:ring-[#0066cc] outline-none"
+                />
+                <Search className="absolute right-3 top-2.5 text-gray-400" size={16} />
+              </div>
+            </div>
 
-      {/* Visual Showcase */}
-      <section className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            <div className="lg:w-1/2">
-              <h2 className="text-4xl font-black text-gray-900 mb-6">Crafted with Precision</h2>
-              <p className="text-gray-600 mb-8 leading-relaxed">
-                Every pixel is intentional. We use a combination of modern tools and timeless design 
-                principles to create an experience that feels both familiar and innovative.
-              </p>
-              <div className="space-y-4">
-                {['Typography', 'Iconography', 'Spacing', 'Color'].map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#0066cc]"></div>
-                    <span className="font-bold text-gray-900">{item}</span>
-                  </div>
+            <div>
+              <h3 className="font-bold text-gray-900 mb-4 uppercase text-xs tracking-widest">Design Categories</h3>
+              <div className="space-y-2">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={cn(
+                      "block w-full text-left text-sm py-1 transition-colors",
+                      selectedCategory === cat ? "text-[#0066cc] font-bold" : "text-gray-500 hover:text-gray-900"
+                    )}
+                  >
+                    {cat}
+                  </button>
                 ))}
               </div>
             </div>
-            <div className="lg:w-1/2 grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="h-48 bg-[#0066cc] rounded-2xl"></div>
-                <div className="h-64 bg-gray-200 rounded-2xl"></div>
-              </div>
-              <div className="space-y-4 pt-8">
-                <div className="h-64 bg-gray-900 rounded-2xl"></div>
-                <div className="h-48 bg-blue-100 rounded-2xl"></div>
+
+            <div className="bg-[#0066cc]/5 p-6 rounded-xl border border-[#0066cc]/10">
+              <h4 className="font-bold text-gray-900 mb-2">Custom Design?</h4>
+              <p className="text-sm text-gray-600 mb-4">Contact us for bespoke design solutions tailored to your needs.</p>
+              <button className="text-[#0066cc] font-bold text-xs uppercase tracking-widest hover:underline">
+                Contact Us
+              </button>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-grow">
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 pb-4 border-b border-gray-100">
+              <p className="text-sm text-gray-500">
+                Showing <span className="font-bold text-gray-900">{filteredProducts.length}</span> designs
+              </p>
+              
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Sort by:</span>
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="text-sm font-bold text-gray-900 outline-none bg-transparent cursor-pointer"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Top Rated</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
+                  <button className="text-[#0066cc]"><Grid size={18} /></button>
+                  <button className="text-gray-400 hover:text-gray-900"><ListIcon size={18} /></button>
+                </div>
               </div>
             </div>
+
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc]"></div>
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+                {filteredProducts.map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <p className="text-gray-500">No designs found matching your criteria.</p>
+              </div>
+            )}
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

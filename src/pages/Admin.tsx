@@ -1,26 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, handleFirestoreError, OperationType, ref, uploadBytes, getDownloadURL, storage } from '../firebase';
+import { db, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, handleFirestoreError, OperationType, ref, uploadBytes, getDownloadURL, storage, serverTimestamp } from '../firebase';
 import { Product } from '../types';
-import { Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, ShieldCheck, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, ShieldCheck, Upload, Image as ImageIcon, FileText, ShoppingBag } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
+import { ADMIN_EMAIL } from '../constants';
 
-const ADMIN_EMAIL = "KALAM438@gmail.com";
+type Tab = 'products' | 'pages';
 
 export default function Admin() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>('products');
   const [products, setProducts] = useState<Product[]>([]);
+  const [pageContents, setPageContents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPageModalOpen, setIsPageModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingPage, setEditingPage] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Form State
+  // Product Form State
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -35,8 +40,17 @@ export default function Admin() {
     featured: false
   });
 
+  // Page Form State
+  const [pageFormData, setPageFormData] = useState({
+    pageId: '',
+    heroTitle: '',
+    heroSubtitle: '',
+    heroImage: '',
+    content: ''
+  });
+
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'products'), (snapshot) => {
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
       const items: Product[] = [];
       snapshot.forEach((doc) => {
         items.push({ id: doc.id, ...doc.data() } as Product);
@@ -48,10 +62,23 @@ export default function Admin() {
       setLoading(false);
     });
 
-    return unsubscribe;
+    const unsubPages = onSnapshot(collection(db, 'page_content'), (snapshot) => {
+      const items: any[] = [];
+      snapshot.forEach((doc) => {
+        items.push({ id: doc.id, ...doc.data() });
+      });
+      setPageContents(items);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'page_content');
+    });
+
+    return () => {
+      unsubProducts();
+      unsubPages();
+    };
   }, []);
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm text-center border border-gray-100">
@@ -165,95 +192,234 @@ export default function Admin() {
     }
   };
 
+  const handleOpenPageModal = (page: any | null = null) => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (page && page.id) {
+      setEditingPage(page);
+      setPageFormData({
+        pageId: page.pageId,
+        heroTitle: page.heroTitle || '',
+        heroSubtitle: page.heroSubtitle || '',
+        heroImage: page.heroImage || '',
+        content: page.content || ''
+      });
+    } else {
+      setEditingPage(null);
+      setPageFormData({
+        pageId: page?.pageId || '',
+        heroTitle: '',
+        heroSubtitle: '',
+        heroImage: '',
+        content: ''
+      });
+    }
+    setIsPageModalOpen(true);
+    setError(null);
+  };
+
+  const handlePageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      let finalImageUrl = pageFormData.heroImage;
+
+      if (imageFile) {
+        setIsUploading(true);
+        const storageRef = ref(storage, `pages/${Date.now()}_${imageFile.name}`);
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        finalImageUrl = await getDownloadURL(snapshot.ref);
+        setIsUploading(false);
+      }
+
+      const pageData = {
+        ...pageFormData,
+        heroImage: finalImageUrl,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingPage && editingPage.id) {
+        await updateDoc(doc(db, 'page_content', editingPage.id), pageData);
+      } else {
+        // Check if pageId already exists
+        const existing = pageContents.find(p => p.pageId === pageFormData.pageId);
+        if (existing) {
+          await updateDoc(doc(db, 'page_content', existing.id), pageData);
+        } else {
+          await addDoc(collection(db, 'page_content'), pageData);
+        }
+      }
+      setIsPageModalOpen(false);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'page_content');
+      setError("Failed to save page content.");
+    } finally {
+      setIsSaving(false);
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div>
             <div className="flex items-center gap-2 text-[#0066cc] mb-2">
               <ShieldCheck size={20} />
               <span className="text-xs font-bold uppercase tracking-widest">Admin Dashboard</span>
             </div>
-            <h1 className="text-4xl font-black text-gray-900">Manage Products</h1>
+            <h1 className="text-4xl font-black text-gray-900">
+              {activeTab === 'products' ? 'Manage Products' : 'Manage Pages'}
+            </h1>
           </div>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="bg-[#0066cc] text-white px-6 py-3 rounded-full font-bold hover:bg-[#0052a3] transition-all flex items-center gap-2 shadow-lg shadow-[#0066cc]/20"
-          >
-            <Plus size={20} />
-            Add New Product
-          </button>
+          
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+            <button 
+              onClick={() => setActiveTab('products')}
+              className={cn(
+                "px-6 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2",
+                activeTab === 'products' ? "bg-[#0066cc] text-white shadow-md shadow-[#0066cc]/20" : "text-gray-500 hover:text-gray-900"
+              )}
+            >
+              <ShoppingBag size={18} />
+              Products
+            </button>
+            <button 
+              onClick={() => setActiveTab('pages')}
+              className={cn(
+                "px-6 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2",
+                activeTab === 'pages' ? "bg-[#0066cc] text-white shadow-md shadow-[#0066cc]/20" : "text-gray-500 hover:text-gray-900"
+              )}
+            >
+              <FileText size={18} />
+              Pages
+            </button>
+          </div>
+
+          {activeTab === 'products' && (
+            <button 
+              onClick={() => handleOpenModal()}
+              className="bg-[#0066cc] text-white px-6 py-3 rounded-full font-bold hover:bg-[#0052a3] transition-all flex items-center gap-2 shadow-lg shadow-[#0066cc]/20"
+            >
+              <Plus size={20} />
+              Add New Product
+            </button>
+          )}
         </div>
 
-        {/* Product List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Product</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Category</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Price</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
-                    <Loader2 className="animate-spin mx-auto text-[#0066cc]" size={32} />
-                  </td>
+        {activeTab === 'products' ? (
+          /* Product List */
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Product</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Category</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Price</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
                 </tr>
-              ) : products.length > 0 ? (
-                products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <img src={product.image} className="w-12 h-12 rounded-lg object-cover bg-gray-100" alt="" />
-                        <span className="font-bold text-gray-900">{product.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{product.category}</td>
-                    <td className="px-6 py-4">
-                      <span className="font-bold text-[#0066cc]">${product.price.toFixed(2)}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {product.isNew && <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">New</span>}
-                        {product.featured && <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">Featured</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => handleOpenModal(product)}
-                          className="p-2 text-gray-400 hover:text-[#0066cc] hover:bg-blue-50 rounded-lg transition-all"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-20 text-center">
+                      <Loader2 className="animate-spin mx-auto text-[#0066cc]" size={32} />
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center text-gray-500">
-                    No products found. Add your first product to get started!
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : products.length > 0 ? (
+                  products.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <img src={product.image} className="w-12 h-12 rounded-lg object-cover bg-gray-100" alt="" />
+                          <span className="font-bold text-gray-900">{product.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{product.category}</td>
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-[#0066cc]">${product.price.toFixed(2)}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {product.isNew && <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">New</span>}
+                          {product.featured && <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">Featured</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={() => handleOpenModal(product)}
+                            className="p-2 text-gray-400 hover:text-[#0066cc] hover:bg-blue-50 rounded-lg transition-all"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-20 text-center text-gray-500">
+                      No products found. Add your first product to get started!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* Page Content List */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {['home', 'shop', 'design', 'about'].map(pageId => {
+              const page = pageContents.find(p => p.pageId === pageId);
+              return (
+                <div key={pageId} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-[#0066cc]">
+                      <FileText size={24} />
+                    </div>
+                    <button 
+                      onClick={() => handleOpenPageModal(page || { pageId })}
+                      className="p-2 text-gray-400 hover:text-[#0066cc] hover:bg-blue-50 rounded-lg transition-all"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  </div>
+                  <h3 className="text-xl font-black text-gray-900 mb-1 capitalize">{pageId} Page</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {page ? `Last updated: ${new Date(page.updatedAt?.seconds * 1000).toLocaleDateString()}` : 'Not yet configured'}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      <div className={cn("w-2 h-2 rounded-full", page?.heroTitle ? "bg-green-500" : "bg-gray-300")}></div>
+                      Hero Title
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      <div className={cn("w-2 h-2 rounded-full", page?.heroImage ? "bg-green-500" : "bg-gray-300")}></div>
+                      Hero Image
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      <div className={cn("w-2 h-2 rounded-full", page?.content ? "bg-green-500" : "bg-gray-300")}></div>
+                      Body Content
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Edit/Add Modal */}
+      {/* Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
@@ -264,7 +430,7 @@ export default function Admin() {
           >
             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-2xl font-black text-gray-900">
-                {editingProduct ? "Edit Product" : "Add New Product"}
+                {editingProduct ? 'Edit Product' : 'Add New Product'}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-900">
                 <X size={24} />
@@ -321,85 +487,106 @@ export default function Admin() {
                     className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
                   />
                 </div>
-                <div className="md:col-span-2 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Product Image</label>
-                    <div className="flex flex-col md:flex-row gap-4">
-                      {/* Image Preview */}
-                      <div className="w-full md:w-40 h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative group">
-                        {(imagePreview || formData.image) ? (
-                          <img 
-                            src={imagePreview || formData.image} 
-                            alt="Preview" 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ImageIcon className="text-gray-300" size={40} />
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <label className="cursor-pointer p-2 bg-white rounded-full text-gray-900 hover:bg-[#0066cc] hover:text-white transition-all">
-                            <Upload size={20} />
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                          </label>
-                        </div>
-                      </div>
+              </div>
 
-                      {/* URL Input as fallback */}
-                      <div className="flex-grow space-y-2">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">Or paste Image URL</p>
-                        <input 
-                          type="url" 
-                          placeholder="https://example.com/image.jpg"
-                          value={formData.image}
-                          onChange={(e) => {
-                            setFormData({...formData, image: e.target.value});
-                            setImageFile(null);
-                            setImagePreview(null);
-                          }}
-                          className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
-                        />
-                        <div className="mt-4">
-                          <label className="inline-flex items-center gap-2 cursor-pointer bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition-all">
-                            <Upload size={16} className="text-[#0066cc]" />
-                            <span className="text-xs font-bold text-gray-700">Upload from Device</span>
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                          </label>
-                          {imageFile && (
-                            <p className="mt-2 text-[10px] text-green-600 font-bold flex items-center gap-1">
-                              <Check size={12} />
-                              {imageFile.name} selected
-                            </p>
-                          )}
-                        </div>
-                      </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Product Image</label>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="w-full md:w-32 h-32 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative group">
+                    {(imagePreview || formData.image) ? (
+                      <img 
+                        src={imagePreview || formData.image} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="text-gray-300" size={32} />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <label className="cursor-pointer p-2 bg-white rounded-full text-gray-900 hover:bg-[#0066cc] hover:text-white transition-all">
+                        <Upload size={16} />
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      </label>
                     </div>
+                  </div>
+                  <div className="flex-grow space-y-2">
+                    <input 
+                      type="url" 
+                      placeholder="Image URL"
+                      value={formData.image}
+                      onChange={(e) => setFormData({...formData, image: e.target.value})}
+                      className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
+                    />
+                    <label className="inline-flex items-center gap-2 cursor-pointer bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition-all">
+                      <Upload size={14} className="text-[#0066cc]" />
+                      <span className="text-xs font-bold text-gray-700">Upload from device</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                    </label>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { id: 'isNew', label: 'New Arrival' },
-                  { id: 'isBestSeller', label: 'Best Seller' },
-                  { id: 'isTopRated', label: 'Top Rated' },
-                  { id: 'featured', label: 'Featured' }
-                ].map(opt => (
-                  <label key={opt.id} className="flex items-center gap-2 cursor-pointer group">
-                    <div className={cn(
-                      "w-5 h-5 rounded border flex items-center justify-center transition-all",
-                      formData[opt.id as keyof typeof formData] ? "bg-[#0066cc] border-[#0066cc]" : "border-gray-200 group-hover:border-gray-400"
-                    )}>
-                      {formData[opt.id as keyof typeof formData] && <Check size={14} className="text-white" />}
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      className="hidden"
-                      checked={formData[opt.id as keyof typeof formData] as boolean}
-                      onChange={(e) => setFormData({...formData, [opt.id]: e.target.checked})}
-                    />
-                    <span className="text-sm text-gray-600">{opt.label}</span>
-                  </label>
-                ))}
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className={cn(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-all",
+                    formData.isNew ? "bg-[#0066cc] border-[#0066cc]" : "border-gray-300 group-hover:border-[#0066cc]"
+                  )}>
+                    {formData.isNew && <Check size={14} className="text-white" />}
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="hidden"
+                    checked={formData.isNew}
+                    onChange={(e) => setFormData({...formData, isNew: e.target.checked})}
+                  />
+                  <span className="text-sm font-medium text-gray-700">New</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className={cn(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-all",
+                    formData.isBestSeller ? "bg-[#0066cc] border-[#0066cc]" : "border-gray-300 group-hover:border-[#0066cc]"
+                  )}>
+                    {formData.isBestSeller && <Check size={14} className="text-white" />}
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="hidden"
+                    checked={formData.isBestSeller}
+                    onChange={(e) => setFormData({...formData, isBestSeller: e.target.checked})}
+                  />
+                  <span className="text-sm font-medium text-gray-700">Best Seller</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className={cn(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-all",
+                    formData.isTopRated ? "bg-[#0066cc] border-[#0066cc]" : "border-gray-300 group-hover:border-[#0066cc]"
+                  )}>
+                    {formData.isTopRated && <Check size={14} className="text-white" />}
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="hidden"
+                    checked={formData.isTopRated}
+                    onChange={(e) => setFormData({...formData, isTopRated: e.target.checked})}
+                  />
+                  <span className="text-sm font-medium text-gray-700">Top Rated</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className={cn(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-all",
+                    formData.featured ? "bg-[#0066cc] border-[#0066cc]" : "border-gray-300 group-hover:border-[#0066cc]"
+                  )}>
+                    {formData.featured && <Check size={14} className="text-white" />}
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="hidden"
+                    checked={formData.featured}
+                    onChange={(e) => setFormData({...formData, featured: e.target.checked})}
+                  />
+                  <span className="text-sm font-medium text-gray-700">Featured</span>
+                </label>
               </div>
 
               <div className="pt-6 flex gap-4">
@@ -416,7 +603,123 @@ export default function Admin() {
                   className="flex-grow bg-[#0066cc] text-white py-4 rounded-xl font-bold hover:bg-[#0052a3] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSaving && <Loader2 className="animate-spin" size={20} />}
-                  {isSaving ? (isUploading ? "Uploading..." : "Saving...") : "Save Product"}
+                  {isSaving ? (isUploading ? "Uploading..." : "Saving...") : (editingProduct ? "Update Product" : "Add Product")}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Page Content Modal */}
+      {isPageModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPageModalOpen(false)}></div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          >
+            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-2xl font-black text-gray-900 capitalize">
+                Edit {pageFormData.pageId} Page
+              </h2>
+              <button onClick={() => setIsPageModalOpen(false)} className="text-gray-400 hover:text-gray-900">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePageSubmit} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+              {error && (
+                <div className="p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 text-sm font-medium">
+                  <AlertCircle size={18} />
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hero Title</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={pageFormData.heroTitle}
+                    onChange={(e) => setPageFormData({...pageFormData, heroTitle: e.target.value})}
+                    className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hero Subtitle</label>
+                  <input 
+                    type="text" 
+                    value={pageFormData.heroSubtitle}
+                    onChange={(e) => setPageFormData({...pageFormData, heroSubtitle: e.target.value})}
+                    className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hero Image</label>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="w-full md:w-40 h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative group">
+                      {(imagePreview || pageFormData.heroImage) ? (
+                        <img 
+                          src={imagePreview || pageFormData.heroImage} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="text-gray-300" size={40} />
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <label className="cursor-pointer p-2 bg-white rounded-full text-gray-900 hover:bg-[#0066cc] hover:text-white transition-all">
+                          <Upload size={20} />
+                          <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex-grow space-y-2">
+                      <input 
+                        type="url" 
+                        placeholder="Hero Image URL"
+                        value={pageFormData.heroImage}
+                        onChange={(e) => setPageFormData({...pageFormData, heroImage: e.target.value})}
+                        className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none"
+                      />
+                      <label className="inline-flex items-center gap-2 cursor-pointer bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition-all">
+                        <Upload size={16} className="text-[#0066cc]" />
+                        <span className="text-xs font-bold text-gray-700">Upload New Hero</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Body Content / Description</label>
+                  <textarea 
+                    rows={6}
+                    value={pageFormData.content}
+                    onChange={(e) => setPageFormData({...pageFormData, content: e.target.value})}
+                    className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-1 focus:ring-[#0066cc] outline-none resize-none"
+                    placeholder="Enter page content here..."
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 flex gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsPageModalOpen(false)}
+                  className="flex-grow bg-gray-100 text-gray-900 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-grow bg-[#0066cc] text-white py-4 rounded-xl font-bold hover:bg-[#0052a3] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSaving && <Loader2 className="animate-spin" size={20} />}
+                  {isSaving ? (isUploading ? "Uploading..." : "Saving...") : "Update Page"}
                 </button>
               </div>
             </form>

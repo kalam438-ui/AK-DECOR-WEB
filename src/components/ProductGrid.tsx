@@ -52,7 +52,7 @@ export default function ProductGrid() {
     <section className="py-12">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-black text-gray-900 mb-8">Featured Products</h2>
+          <h2 className="text-3xl font-black text-gray-900 mb-8">Curated Collection</h2>
           
           <div className="flex justify-center gap-8 border-b border-gray-100">
             {TABS.map(tab => (

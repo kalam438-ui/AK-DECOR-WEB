@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Product, MOCK_PRODUCTS } from '../types';
 import { ProductCard } from '../components/ProductCard';
-import { db, collection, onSnapshot, query, orderBy, handleFirestoreError, OperationType } from '../firebase';
+import { db, collection, onSnapshot, query, orderBy, handleFirestoreError, OperationType, where } from '../firebase';
 import { Search, Filter, ChevronDown, Grid, List as ListIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { motion } from 'motion/react';
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -11,11 +12,12 @@ export default function Shop() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
+  const [pageContent, setPageContent] = useState<any>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'products'), orderBy('name'));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubProducts = onSnapshot(q, (snapshot) => {
       const firestoreProducts: Product[] = [];
       snapshot.forEach((doc) => {
         firestoreProducts.push({ id: doc.id, ...doc.data() } as Product);
@@ -34,7 +36,17 @@ export default function Shop() {
       setLoading(false);
     });
 
-    return unsubscribe;
+    const pageQ = query(collection(db, 'page_content'), where('pageId', '==', 'shop'));
+    const unsubPage = onSnapshot(pageQ, (snapshot) => {
+      if (!snapshot.empty) {
+        setPageContent(snapshot.docs[0].data());
+      }
+    });
+
+    return () => {
+      unsubProducts();
+      unsubPage();
+    };
   }, []);
 
   const categories = ['All', ...new Set(products.map(p => p.category))];
@@ -55,10 +67,28 @@ export default function Shop() {
   return (
     <div className="min-h-screen bg-white">
       {/* Page Header */}
-      <div className="bg-gray-50 py-12 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-4xl font-black text-gray-900 mb-2">Shop</h1>
-          <p className="text-gray-500">Home / Shop</p>
+      <div className="relative bg-gray-900 text-white py-20 overflow-hidden border-b border-gray-100">
+        {pageContent?.heroImage && (
+          <div className="absolute inset-0 opacity-40">
+            <img src={pageContent.heroImage} className="w-full h-full object-cover" alt="" />
+          </div>
+        )}
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-5xl font-black mb-2 uppercase"
+          >
+            {pageContent?.heroTitle || "Shop Collection"}
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-gray-300 text-lg max-w-2xl"
+          >
+            {pageContent?.heroSubtitle || "Discover our curated selection of premium furniture and home decor."}
+          </motion.p>
         </div>
       </div>
 

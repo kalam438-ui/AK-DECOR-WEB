@@ -29,6 +29,16 @@ service cloud.firestore {
     //   - createdAt: timestamp (required) - When it was uploaded
     //   - fileName: string (optional) - Original file name
     //
+    // Collection: page_content
+    // Document ID: pageId
+    // Fields:
+    //   - pageId: string (required)
+    //   - heroTitle: string (required)
+    //   - heroSubtitle: string (optional)
+    //   - heroImage: string (optional)
+    //   - content: string (optional)
+    //   - updatedAt: timestamp (required)
+    //
     // ===============================================================
 
     // ===============================================================
@@ -56,7 +66,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && 
-        (request.auth.token.email == "KALAM438@gmail.com" && request.auth.token.email_verified == true);
+        (request.auth.token.email.toLower() == "kalam438@gmail.com" && request.auth.token.email_verified == true);
     }
 
     // ===============================================================
@@ -65,6 +75,12 @@ service cloud.firestore {
 
     // Products collection: Publicly readable, only admin can write
     match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Page Content collection: Publicly readable, only admin can write
+    match /page_content/{pageId} {
       allow read: if true;
       allow write: if isAdmin();
     }

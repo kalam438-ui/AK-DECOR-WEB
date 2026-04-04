@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header';
+import WhatsAppButton from './components/WhatsAppButton';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Admin from './pages/Admin';
@@ -8,11 +9,13 @@ import Design from './pages/Design';
 import About from './pages/About';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { db, doc, getDoc } from './firebase';
+import { STORE_NAME, ADMIN_EMAIL, STORE_PHONE, STORE_EMAIL } from './constants';
 
 function AppContent() {
+  const { user } = useAuth();
   useEffect(() => {
     const testConnection = async () => {
       try {
@@ -31,6 +34,7 @@ function AppContent() {
       <CartProvider>
         <div className="min-h-screen bg-white font-sans selection:bg-[#0066cc] selection:text-white">
           <Header />
+          <WhatsAppButton />
           
           <main>
             <Routes>
@@ -49,19 +53,19 @@ function AppContent() {
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="space-y-6">
               <h2 className="text-3xl font-bold tracking-tight">
-                Press<span className="text-[#0066cc]">Mart.</span>
+                {STORE_NAME}<span className="text-[#0066cc]">.</span>
               </h2>
               <p className="text-gray-400 text-sm leading-relaxed">
-                We are a global house of brands, powered by a world-class supply chain and a passion for fashion.
+                Premium modern home decor and interior design solutions. Discover elegant furniture, wall units, and bespoke design services tailored to your lifestyle.
               </p>
             </div>
             
             <div>
               <h4 className="font-bold mb-6 uppercase text-xs tracking-widest">Quick Links</h4>
               <ul className="space-y-4 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms & Conditions</a></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+                <li><Link to="/design" className="hover:text-white transition-colors">Design Gallery</Link></li>
+                <li><Link to="/shop" className="hover:text-white transition-colors">Shop Collection</Link></li>
                 <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
@@ -69,34 +73,42 @@ function AppContent() {
             <div>
               <h4 className="font-bold mb-6 uppercase text-xs tracking-widest">Categories</h4>
               <ul className="space-y-4 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Men's Fashion</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Women's Style</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Accessories</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Shoes & Bags</a></li>
+                <li><Link to="/shop" className="hover:text-white transition-colors">Wall Units</Link></li>
+                <li><Link to="/shop" className="hover:text-white transition-colors">Furniture</Link></li>
+                <li><Link to="/shop" className="hover:text-white transition-colors">Lighting</Link></li>
+                <li><Link to="/shop" className="hover:text-white transition-colors">Home Decor</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold mb-6 uppercase text-xs tracking-widest">Newsletter</h4>
-              <p className="text-gray-400 text-sm mb-6">Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
-              <div className="flex">
-                <input 
-                  type="email" 
-                  placeholder="Your Email" 
-                  className="bg-gray-800 border-none px-4 py-3 text-sm flex-grow focus:ring-1 focus:ring-[#0066cc] outline-none"
-                />
-                <button className="bg-[#0066cc] px-6 py-3 text-sm font-bold hover:bg-[#0052a3] transition-colors">
-                  Join
-                </button>
-              </div>
+              <h4 className="font-bold mb-6 uppercase text-xs tracking-widest">Contact Us</h4>
+              <ul className="space-y-4 text-sm text-gray-400">
+                <li className="flex flex-col">
+                  <span className="text-white font-bold">Email:</span>
+                  <a href={`mailto:${STORE_EMAIL}`} className="hover:text-[#0066cc] transition-colors">{STORE_EMAIL}</a>
+                </li>
+                <li className="flex flex-col">
+                  <span className="text-white font-bold">Phone:</span>
+                  <a href={`tel:${STORE_PHONE.replace(/\s/g, '')}`} className="hover:text-[#0066cc] transition-colors">{STORE_PHONE}</a>
+                </li>
+                <li className="flex flex-col">
+                  <span className="text-white font-bold">WhatsApp:</span>
+                  <a href={`https://wa.me/${STORE_PHONE.replace(/[+\s]/g, '')}`} className="hover:text-[#0066cc] transition-colors">Chat with us</a>
+                </li>
+              </ul>
             </div>
           </div>
           <div className="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-xs">© 2026 PressMart. All Rights Reserved.</p>
-            <div className="flex gap-4">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="Paypal" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
+            <p className="text-gray-500 text-xs">© 2026 {STORE_NAME}. All Rights Reserved.</p>
+            <div className="flex items-center gap-6">
+              {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+                <Link to="/admin" className="text-xs text-[#0066cc] font-bold hover:underline">Admin Dashboard</Link>
+              )}
+              <div className="flex gap-4">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="Paypal" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
+              </div>
             </div>
           </div>
         </footer>

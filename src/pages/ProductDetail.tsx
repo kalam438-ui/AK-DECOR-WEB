@@ -6,8 +6,7 @@ import { motion } from 'motion/react';
 import { ShoppingCart, ArrowLeft, Star, ShieldCheck, Truck, RotateCcw, Loader2, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { cn } from '../lib/utils';
-
-const WHATSAPP_NUMBER = "+1234567890"; // Replace with your actual WhatsApp number
+import { WHATSAPP_NUMBER, STORE_NAME } from '../constants';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +18,7 @@ export default function ProductDetail() {
 
   const handleWhatsAppBuy = () => {
     if (!product) return;
-    const message = `Hello PressMart! I'm interested in buying:\n\n*${product.name}*\nPrice: $${product.price.toFixed(2)}\nCategory: ${product.category}\n\nPlease let me know how to proceed!`;
+    const message = `Hello ${STORE_NAME}! I'm interested in buying:\n\n*${product.name}*\nPrice: $${product.price.toFixed(2)}\nCategory: ${product.category}\n\nPlease let me know how to proceed!`;
     const fullMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}?text=${fullMessage}`, '_blank');
   };

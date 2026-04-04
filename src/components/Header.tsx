@@ -4,8 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { signInWithGoogle, logout } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
-
-const ADMIN_EMAIL = "KALAM438@gmail.com";
+import { ADMIN_EMAIL, STORE_NAME, STORE_PHONE, STORE_EMAIL } from '../constants';
 
 export default function Header() {
   const { user } = useAuth();
@@ -18,10 +17,10 @@ export default function Header() {
       <div className="bg-[#0066cc] text-white text-xs py-2 px-4 flex justify-between items-center">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
-            <span className="opacity-80">support@pressmart.com</span>
+            <span className="opacity-80">{STORE_EMAIL}</span>
           </span>
           <span className="flex items-center gap-1">
-            <span className="opacity-80">+(123) 4567 890</span>
+            <span className="opacity-80">{STORE_PHONE}</span>
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -42,7 +41,7 @@ export default function Header() {
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Press<span className="text-[#0066cc]">Mart.</span>
+              {STORE_NAME}<span className="text-[#0066cc]">.</span>
             </h1>
           </Link>
           
@@ -51,7 +50,7 @@ export default function Header() {
             <Link to="/shop" className="flex items-center gap-1 hover:text-[#0066cc]">Shop <ChevronDown size={14} /></Link>
             <Link to="/design" className="flex items-center gap-1 hover:text-[#0066cc]">Design <ChevronDown size={14} /></Link>
             <Link to="/about" className="flex items-center gap-1 hover:text-[#0066cc]">About <ChevronDown size={14} /></Link>
-            {user?.email === ADMIN_EMAIL && (
+            {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
               <Link to="/admin" className="text-[#0066cc] font-bold flex items-center gap-1">
                 <Settings size={14} /> Admin
               </Link>
@@ -60,6 +59,11 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-6 text-gray-700">
+          {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+            <Link to="/admin" className="md:hidden text-[#0066cc] p-2 hover:bg-blue-50 rounded-lg transition-all" title="Admin Dashboard">
+              <Settings size={24} />
+            </Link>
+          )}
           {user ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">

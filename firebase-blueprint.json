@@ -31,6 +31,20 @@
         "fileName": { "type": "string", "description": "Original name of the file" }
       },
       "required": ["userId", "imageUrl", "createdAt"]
+    },
+    "PageContent": {
+      "title": "Page Content",
+      "description": "Content for a specific page (Home, Shop, Design, About)",
+      "type": "object",
+      "properties": {
+        "pageId": { "type": "string", "description": "The ID of the page (e.g., 'home', 'shop', 'design', 'about')" },
+        "heroTitle": { "type": "string", "description": "The main title for the page hero section" },
+        "heroSubtitle": { "type": "string", "description": "The subtitle for the page hero section" },
+        "heroImage": { "type": "string", "description": "The background image for the page hero section" },
+        "content": { "type": "string", "description": "The main body content for the page" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the page content was last updated" }
+      },
+      "required": ["pageId", "heroTitle", "updatedAt"]
     }
   },
   "firestore": {
@@ -41,6 +55,10 @@
     "/uploads/{uploadId}": {
       "schema": "UserUpload",
       "description": "Collection of user-uploaded images"
+    },
+    "/page_content/{pageId}": {
+      "schema": "PageContent",
+      "description": "Collection of content for each page"
     }
   }
 }

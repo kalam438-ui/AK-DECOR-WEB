@@ -1,26 +1,26 @@
 import React from 'react';
-import { Truck, CreditCard, RotateCcw, Headphones } from 'lucide-react';
+import { Truck, ShieldCheck, Palette, Headphones } from 'lucide-react';
 
 const features = [
   {
     icon: <Truck className="text-[#0066cc]" size={32} />,
-    title: "Free Shipping",
-    description: "On All Orders Over $99"
+    title: "Safe Delivery",
+    description: "Expert handling for all items"
   },
   {
-    icon: <CreditCard className="text-[#0066cc]" size={32} />,
-    title: "Secure Payment",
-    description: "We ensure secure payment"
+    icon: <Palette className="text-[#0066cc]" size={32} />,
+    title: "Custom Design",
+    description: "Bespoke interior solutions"
   },
   {
-    icon: <RotateCcw className="text-[#0066cc]" size={32} />,
-    title: "100% Money Back",
-    description: "30 Days Return Policy"
+    icon: <ShieldCheck className="text-[#0066cc]" size={32} />,
+    title: "Quality Assured",
+    description: "Premium materials & finish"
   },
   {
     icon: <Headphones className="text-[#0066cc]" size={32} />,
-    title: "Online Support",
-    description: "24/7 Dedicated Support"
+    title: "Expert Support",
+    description: "Consult with our designers"
   }
 ];
 

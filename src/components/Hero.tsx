@@ -1,7 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
 
-export default function Hero() {
+interface HeroProps {
+  title?: string;
+  subtitle?: string;
+  image?: string;
+  badge?: string;
+}
+
+export default function Hero({ 
+  title = "MODERN INTERIORS", 
+  subtitle = "Elegant Design Solutions", 
+  image = "https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?q=80&w=1000&auto=format&fit=crop",
+  badge = "Exclusive Collection"
+}: HeroProps) {
   return (
     <section className="relative w-full h-[600px] bg-[#f5f7f9] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 h-full flex items-center">
@@ -12,15 +24,15 @@ export default function Hero() {
             transition={{ duration: 0.5 }}
             className="text-[#0066cc] font-serif italic text-2xl mb-4 block"
           >
-            Season Sale
+            {badge}
           </motion.span>
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-6xl font-black text-gray-900 mb-4 tracking-tight"
+            className="text-6xl font-black text-gray-900 mb-4 tracking-tight uppercase"
           >
-            MEN'S FASHION
+            {title}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -28,7 +40,7 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-3xl text-gray-600 mb-8"
           >
-            Min. 35-70% Off
+            {subtitle}
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -50,7 +62,7 @@ export default function Hero() {
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
-            src="https://images.unsplash.com/photo-1488161628813-244768e7f6e2?q=80&w=1000&auto=format&fit=crop" 
+            src={image} 
             alt="Hero Fashion"
             className="h-[90%] object-contain"
             referrerPolicy="no-referrer"

@@ -3,15 +3,14 @@ import { motion } from 'motion/react';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-
-const WHATSAPP_NUMBER = "+1234567890"; // Replace with your actual WhatsApp number
+import { WHATSAPP_NUMBER, STORE_NAME } from '../constants';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
   const navigate = useNavigate();
 
   const handleWhatsAppOrder = () => {
-    const messageHeader = "Hello PressMart! I'd like to place an order:\n\n";
+    const messageHeader = `Hello ${STORE_NAME}! I'd like to place an order:\n\n`;
     const itemsList = cart.map(item => 
       `• ${item.name} (x${item.quantity}) - $${(item.price * item.quantity).toFixed(2)}`
     ).join('\n');

@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Users, Globe, Award, ShieldCheck } from 'lucide-react';
+import { Users, Globe, Award, ShieldCheck, Mail, Phone, MessageCircle } from 'lucide-react';
+import { STORE_PHONE, STORE_EMAIL } from '../constants';
+import { db, collection, query, where, onSnapshot } from '../firebase';
 
 export default function About() {
+  const [pageContent, setPageContent] = useState<any>(null);
+
+  useEffect(() => {
+    const q = query(collection(db, 'page_content'), where('pageId', '==', 'about'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setPageContent(snapshot.docs[0].data());
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -20,9 +34,9 @@ export default function About() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-6xl font-black text-gray-900 mb-6 tracking-tight"
+              className="text-6xl font-black text-gray-900 mb-6 tracking-tight uppercase"
             >
-              Redefining Modern Retail.
+              {pageContent?.heroTitle || "Crafting Your Dream Spaces."}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -30,9 +44,7 @@ export default function About() {
               transition={{ delay: 0.2 }}
               className="text-xl text-gray-600 leading-relaxed mb-8"
             >
-              Founded in 2026, PressMart started with a simple mission: to provide high-quality, 
-              fashion-forward products while maintaining a commitment to sustainability and 
-              customer satisfaction.
+              {pageContent?.heroSubtitle || "Founded in 2026, AK Decor and Design is dedicated to transforming houses into homes. We combine modern aesthetics with functional design to create spaces that inspire."}
             </motion.p>
           </div>
           <div className="lg:w-1/2 relative">
@@ -43,7 +55,7 @@ export default function About() {
               className="relative z-10 rounded-2xl overflow-hidden shadow-2xl"
             >
               <img 
-                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop" 
+                src={pageContent?.heroImage || "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop"} 
                 alt="Our Team" 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
@@ -54,6 +66,16 @@ export default function About() {
           </div>
         </div>
       </section>
+
+      {pageContent?.content && (
+        <section className="py-24 bg-white border-b border-gray-100">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed whitespace-pre-wrap">
+              {pageContent.content}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Stats Section */}
       <section className="py-24 border-b border-gray-100">
@@ -82,14 +104,14 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-black text-gray-900 mb-4">Our Core Values</h2>
-            <p className="text-gray-500 max-w-2xl mx-auto">The principles that guide everything we do at PressMart.</p>
+            <p className="text-gray-500 max-w-2xl mx-auto">The principles that guide every design at AK Decor and Design.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { icon: <Users size={32} />, title: "Community First", desc: "We believe in building strong relationships with our customers and partners." },
-              { icon: <Globe size={32} />, title: "Sustainability", desc: "Committed to reducing our environmental footprint through conscious choices." },
-              { icon: <Award size={32} />, title: "Quality", desc: "We never compromise on the quality of our products or our service." },
-              { icon: <ShieldCheck size={32} />, title: "Integrity", desc: "Transparency and honesty are at the heart of our business operations." }
+              { icon: <Users size={32} />, title: "Client Focused", desc: "We listen to your needs to create spaces that truly reflect your personality." },
+              { icon: <Globe size={32} />, title: "Innovation", desc: "Pushing the boundaries of modern design with creative and functional solutions." },
+              { icon: <Award size={32} />, title: "Craftsmanship", desc: "We use only the finest materials and skilled artisans for every project." },
+              { icon: <ShieldCheck size={32} />, title: "Timelessness", desc: "Designing interiors that remain elegant and relevant for years to come." }
             ].map((value, index) => (
               <div key={index} className="text-center p-8 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl transition-all duration-300">
                 <div className="text-[#0066cc] mb-6 flex justify-center">{value.icon}</div>
@@ -97,6 +119,60 @@ export default function About() {
                 <p className="text-gray-600 text-sm leading-relaxed">{value.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-white rounded-3xl p-12 shadow-xl border border-gray-100 flex flex-col lg:flex-row items-center gap-12">
+            <div className="lg:w-1/2">
+              <h2 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">Get in Touch</h2>
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+                Have questions about our products or services? Our team is here to help you 
+                find exactly what you're looking for.
+              </p>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-[#0066cc]">
+                    <Mail size={24} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-gray-900 uppercase tracking-widest">Email Us</div>
+                    <a href={`mailto:${STORE_EMAIL}`} className="text-[#0066cc] font-medium hover:underline">{STORE_EMAIL}</a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-[#0066cc]">
+                    <Phone size={24} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-gray-900 uppercase tracking-widest">Call Us</div>
+                    <a href={`tel:${STORE_PHONE.replace(/\s/g, '')}`} className="text-[#0066cc] font-medium hover:underline">{STORE_PHONE}</a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-[#25D366]">
+                    <MessageCircle size={24} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-gray-900 uppercase tracking-widest">WhatsApp</div>
+                    <a href={`https://wa.me/${STORE_PHONE.replace(/[+\s]/g, '')}`} className="text-[#25D366] font-medium hover:underline">Chat with us now</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="lg:w-1/2 w-full">
+              <div className="aspect-video rounded-2xl overflow-hidden bg-gray-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=1000&auto=format&fit=crop" 
+                  alt="Contact Us" 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
