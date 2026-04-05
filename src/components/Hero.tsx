@@ -15,14 +15,14 @@ export default function Hero({
   badge = "Exclusive Collection"
 }: HeroProps) {
   return (
-    <section className="relative w-full h-[600px] bg-[#f5f7f9] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center">
-        <div className="w-full md:w-1/2 z-10">
+    <section className="relative w-full min-h-[400px] md:h-[600px] bg-[#f5f7f9] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 h-full flex flex-col md:flex-row items-center py-8 md:py-0">
+        <div className="w-full md:w-1/2 z-10 text-center md:text-left mb-8 md:mb-0">
           <motion.span 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-[#0066cc] font-serif italic text-2xl mb-4 block"
+            className="text-[#0066cc] font-serif italic text-xl md:text-2xl mb-4 block"
           >
             {badge}
           </motion.span>
@@ -30,7 +30,7 @@ export default function Hero({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-6xl font-black text-gray-900 mb-4 tracking-tight uppercase"
+            className="text-4xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight uppercase"
           >
             {title}
           </motion.h2>
@@ -38,7 +38,7 @@ export default function Hero({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-3xl text-gray-600 mb-8"
+            className="text-xl md:text-3xl text-gray-600 mb-8"
           >
             {subtitle}
           </motion.p>
@@ -46,25 +46,25 @@ export default function Hero({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex gap-4"
+            className="flex flex-wrap justify-center md:justify-start gap-4"
           >
-            <button className="bg-[#0066cc] text-white px-8 py-3 font-bold hover:bg-[#0052a3] transition-colors uppercase tracking-wider text-sm">
+            <button className="bg-[#0066cc] text-white px-6 md:px-8 py-3 font-bold hover:bg-[#0052a3] transition-colors uppercase tracking-wider text-xs md:text-sm">
               Shop Now
             </button>
-            <button className="border-2 border-gray-900 text-gray-900 px-8 py-3 font-bold hover:bg-gray-900 hover:text-white transition-all uppercase tracking-wider text-sm">
+            <button className="border-2 border-gray-900 text-gray-900 px-6 md:px-8 py-3 font-bold hover:bg-gray-900 hover:text-white transition-all uppercase tracking-wider text-xs md:text-sm">
               Read More
             </button>
           </motion.div>
         </div>
         
-        <div className="absolute right-0 bottom-0 h-full w-1/2 flex items-end justify-end">
+        <div className="relative md:absolute md:right-0 md:bottom-0 h-[300px] md:h-full w-full md:w-1/2 flex items-end justify-center md:justify-end">
           <motion.img 
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             src={image} 
             alt="Hero Fashion"
-            className="h-[90%] object-contain"
+            className="h-full md:h-[90%] object-contain"
             referrerPolicy="no-referrer"
           />
         </div>

@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +12,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
+  const { formatPrice, t } = useSettings();
   const [adding, setAdding] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -88,9 +90,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[#0066cc]">${product.price.toFixed(2)}</span>
+              <span className="text-sm font-bold text-[#0066cc]">{formatPrice(product.price)}</span>
               {product.oldPrice && (
-                <span className="text-xs text-gray-400 line-through">${product.oldPrice.toFixed(2)}</span>
+                <span className="text-xs text-gray-400 line-through">{formatPrice(product.oldPrice)}</span>
               )}
             </div>
             <button 

@@ -42,6 +42,9 @@ export default function ProductGrid() {
   }, []);
 
   const filteredProducts = products.filter(p => {
+    const matchesPage = !p.targetPage || p.targetPage === 'shop' || p.targetPage === 'both';
+    if (!matchesPage) return false;
+    
     if (activeTab === 'new') return p.isNew;
     if (activeTab === 'best') return p.isBestSeller;
     if (activeTab === 'top') return p.isTopRated || p.rating >= 4.5;

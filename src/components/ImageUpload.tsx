@@ -121,12 +121,11 @@ export default function ImageUpload() {
   };
 
   return (
-    <section className="py-20 bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black text-gray-900 mb-4">Upload Product Images</h2>
-          <p className="text-gray-600">Add high-quality images to showcase your products to the world.</p>
-        </div>
+    <div className="p-6 sm:p-10">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-black text-gray-900 mb-4">Upload Product Images</h2>
+        <p className="text-gray-600">Add high-quality images to showcase your products to the world.</p>
+      </div>
 
         {!user ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
@@ -261,7 +260,6 @@ export default function ImageUpload() {
             )}
           </>
         )}
-      </div>
-    </section>
+    </div>
   );
 }

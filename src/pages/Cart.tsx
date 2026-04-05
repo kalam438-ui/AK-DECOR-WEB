@@ -2,19 +2,21 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { WHATSAPP_NUMBER, STORE_NAME } from '../constants';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
+  const { formatPrice, t } = useSettings();
   const navigate = useNavigate();
 
   const handleWhatsAppOrder = () => {
     const messageHeader = `Hello ${STORE_NAME}! I'd like to place an order:\n\n`;
     const itemsList = cart.map(item => 
-      `• ${item.name} (x${item.quantity}) - $${(item.price * item.quantity).toFixed(2)}`
+      `• ${item.name} (x${item.quantity}) - ${formatPrice(item.price * item.quantity)}`
     ).join('\n');
-    const footer = `\n\nTotal Items: ${totalItems}\nTotal Price: $${totalPrice.toFixed(2)}\n\nPlease let me know the next steps!`;
+    const footer = `\n\nTotal Items: ${totalItems}\nTotal Price: ${formatPrice(totalPrice)}\n\nPlease let me know the next steps!`;
     
     const fullMessage = encodeURIComponent(messageHeader + itemsList + footer);
     window.open(`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}?text=${fullMessage}`, '_blank');
@@ -68,7 +70,7 @@ export default function Cart() {
                     {item.name}
                   </Link>
                   <p className="text-gray-500 text-sm mb-2">{item.category}</p>
-                  <div className="text-[#0066cc] font-black text-lg">${item.price.toFixed(2)}</div>
+                  <div className="text-[#0066cc] font-black text-lg">{formatPrice(item.price)}</div>
                 </div>
 
                 <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-xl">
@@ -89,7 +91,7 @@ export default function Cart() {
 
                 <div className="text-right min-w-[100px]">
                   <div className="text-xl font-black text-gray-900 mb-2">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {formatPrice(item.price * item.quantity)}
                   </div>
                   <button 
                     onClick={() => removeFromCart(item.id)}
@@ -110,7 +112,7 @@ export default function Cart() {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span className="font-bold text-gray-900">${totalPrice.toFixed(2)}</span>
+                  <span className="font-bold text-gray-900">{formatPrice(totalPrice)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
@@ -123,7 +125,7 @@ export default function Cart() {
                 <div className="h-px bg-gray-100 my-4"></div>
                 <div className="flex justify-between text-xl font-black text-gray-900">
                   <span>Total</span>
-                  <span className="text-[#0066cc]">${totalPrice.toFixed(2)}</span>
+                  <span className="text-[#0066cc]">{formatPrice(totalPrice)}</span>
                 </div>
               </div>
 

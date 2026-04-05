@@ -11,6 +11,7 @@ import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { db, doc, getDoc } from './firebase';
 import { STORE_NAME, ADMIN_EMAIL, STORE_PHONE, STORE_EMAIL } from './constants';
 
@@ -31,8 +32,9 @@ function AppContent() {
 
   return (
     <Router>
-      <CartProvider>
-        <div className="min-h-screen bg-white font-sans selection:bg-[#0066cc] selection:text-white">
+      <SettingsProvider>
+        <CartProvider>
+          <div className="min-h-screen bg-white font-sans selection:bg-[#0066cc] selection:text-white">
           <Header />
           <WhatsAppButton />
           
@@ -105,15 +107,16 @@ function AppContent() {
                 <Link to="/admin" className="text-xs text-[#0066cc] font-bold hover:underline">Admin Dashboard</Link>
               )}
               <div className="flex gap-4">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="Paypal" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="Paypal" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
               </div>
             </div>
           </div>
         </footer>
         </div>
-      </CartProvider>
+        </CartProvider>
+      </SettingsProvider>
     </Router>
   );
 }

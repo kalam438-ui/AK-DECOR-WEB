@@ -44,7 +44,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="relative group overflow-hidden bg-[#f5f7f9] h-[300px]">
             <img 
-              src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1000&auto=format&fit=crop" 
+              src="https://i.pinimg.com/736x/3c/7c/f9/3c7cf918371aa1f20ce7a2d91cb13e93.jpg" 
               alt="Premium Seating"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               referrerPolicy="no-referrer"

@@ -12,6 +12,7 @@ export interface Product {
   isTopRated?: boolean;
   discount?: number;
   featured?: boolean;
+  targetPage?: 'shop' | 'design' | 'both';
 }
 
 export const MOCK_PRODUCTS: Product[] = [

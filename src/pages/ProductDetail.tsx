@@ -5,6 +5,7 @@ import { Product } from '../types';
 import { motion } from 'motion/react';
 import { ShoppingCart, ArrowLeft, Star, ShieldCheck, Truck, RotateCcw, Loader2, MessageCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '../lib/utils';
 import { WHATSAPP_NUMBER, STORE_NAME } from '../constants';
 
@@ -12,13 +13,14 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { formatPrice, t } = useSettings();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
   const handleWhatsAppBuy = () => {
     if (!product) return;
-    const message = `Hello ${STORE_NAME}! I'm interested in buying:\n\n*${product.name}*\nPrice: $${product.price.toFixed(2)}\nCategory: ${product.category}\n\nPlease let me know how to proceed!`;
+    const message = `Hello ${STORE_NAME}! I'm interested in buying:\n\n*${product.name}*\nPrice: ${formatPrice(product.price)}\nCategory: ${product.category}\n\nPlease let me know how to proceed!`;
     const fullMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}?text=${fullMessage}`, '_blank');
   };
@@ -114,7 +116,7 @@ export default function ProductDetail() {
                 <span className="text-gray-400 text-sm font-medium">(120 Reviews)</span>
               </div>
               <div className="text-4xl font-black text-[#0066cc] mb-8">
-                ${product.price.toFixed(2)}
+                {formatPrice(product.price)}
               </div>
               <p className="text-gray-600 leading-relaxed mb-8 text-lg">
                 Experience premium quality with our {product.name}. Designed for durability and style, 

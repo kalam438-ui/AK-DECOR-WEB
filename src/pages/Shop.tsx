@@ -4,7 +4,7 @@ import { ProductCard } from '../components/ProductCard';
 import { db, collection, onSnapshot, query, orderBy, handleFirestoreError, OperationType, where } from '../firebase';
 import { Search, Filter, ChevronDown, Grid, List as ListIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +13,7 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
   const [pageContent, setPageContent] = useState<any>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'products'), orderBy('name'));
@@ -55,7 +56,8 @@ export default function Shop() {
     .filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesPage = !p.targetPage || p.targetPage === 'shop' || p.targetPage === 'both';
+      return matchesSearch && matchesCategory && matchesPage;
     })
     .sort((a, b) => {
       if (sortBy === 'price-low') return a.price - b.price;
@@ -70,7 +72,7 @@ export default function Shop() {
       <div className="relative bg-gray-900 text-white py-20 overflow-hidden border-b border-gray-100">
         {pageContent?.heroImage && (
           <div className="absolute inset-0 opacity-40">
-            <img src={pageContent.heroImage} className="w-full h-full object-cover" alt="" />
+            <img src={pageContent.heroImage} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
           </div>
         )}
         <div className="max-w-7xl mx-auto px-4 relative z-10">
@@ -94,8 +96,31 @@ export default function Shop() {
 
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex flex-col lg:flex-row gap-12">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 space-y-8">
+          {/* Mobile Filter Toggle */}
+          <div className="lg:hidden flex items-center justify-between mb-6">
+            <button 
+              onClick={() => setIsFilterOpen(true)}
+              className="flex items-center gap-2 bg-gray-100 px-6 py-3 rounded-xl font-bold text-sm"
+            >
+              <Filter size={18} /> Filters
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Sort:</span>
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="text-sm font-bold text-gray-900 outline-none bg-transparent cursor-pointer"
+              >
+                <option value="newest">Newest</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Top Rated</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Sidebar Filters (Desktop) */}
+          <aside className="hidden lg:block w-64 space-y-8">
             <div>
               <h3 className="font-bold text-gray-900 mb-4 uppercase text-xs tracking-widest">Search</h3>
               <div className="relative">
@@ -136,6 +161,69 @@ export default function Shop() {
               </button>
             </div>
           </aside>
+
+          {/* Mobile Filter Drawer */}
+          <AnimatePresence>
+            {isFilterOpen && (
+              <div className="fixed inset-0 z-[100] lg:hidden">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsFilterOpen(false)}
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                />
+                <motion.aside 
+                  initial={{ x: '-100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '-100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="absolute top-0 left-0 bottom-0 w-[280px] bg-white p-8 shadow-2xl overflow-y-auto"
+                >
+                  <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Filters</h2>
+                    <button onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-900">
+                      <Search size={24} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-4 uppercase text-xs tracking-widest">Search</h3>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          placeholder="Search products..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full border border-gray-200 px-4 py-2 text-sm focus:ring-1 focus:ring-[#0066cc] outline-none"
+                        />
+                        <Search className="absolute right-3 top-2.5 text-gray-400" size={16} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-4 uppercase text-xs tracking-widest">Categories</h3>
+                      <div className="space-y-2">
+                        {categories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => { setSelectedCategory(cat); setIsFilterOpen(false); }}
+                            className={cn(
+                              "block w-full text-left text-sm py-2 transition-colors",
+                              selectedCategory === cat ? "text-[#0066cc] font-bold" : "text-gray-500 hover:text-gray-900"
+                            )}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.aside>
+              </div>
+            )}
+          </AnimatePresence>
 
           {/* Main Content */}
           <div className="flex-grow">
