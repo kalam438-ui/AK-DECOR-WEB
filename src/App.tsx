@@ -107,7 +107,7 @@ function AppContent() {
                 <Link to="/admin" className="text-xs text-[#0066cc] font-bold hover:underline">Admin Dashboard</Link>
               )}
               <div className="flex gap-4">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
+                <img src="https://i.pinimg.com/736x/7b/c6/0c/7bc60c2dc220d37247e278a21cd13c19.jpg" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="Paypal" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
               </div>

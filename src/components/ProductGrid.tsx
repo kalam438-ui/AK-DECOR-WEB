@@ -3,6 +3,8 @@ import { Product, MOCK_PRODUCTS } from '../types';
 import { ProductCard } from './ProductCard';
 import { cn } from '../lib/utils';
 import { db, collection, onSnapshot, query, where, limit, handleFirestoreError, OperationType } from '../firebase';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
 const TABS = [
   { id: 'new', label: 'New Arrival' },
@@ -81,11 +83,22 @@ export default function ProductGrid() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc]"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-10">
-            {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-10">
+              {filteredProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            
+            <div className="mt-16 text-center">
+              <Link 
+                to="/shop" 
+                className="inline-flex items-center gap-2 bg-gray-900 text-white px-10 py-4 font-bold hover:bg-[#0066cc] transition-all uppercase tracking-widest text-sm"
+              >
+                Shop More <ArrowRight size={18} />
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </section>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 
 interface HeroProps {
   title?: string;
@@ -11,7 +12,7 @@ interface HeroProps {
 export default function Hero({ 
   title = "MODERN INTERIORS", 
   subtitle = "Elegant Design Solutions", 
-  image = "https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?q=80&w=1000&auto=format&fit=crop",
+  image = "https://i.pinimg.com/736x/7b/c6/0c/7bc60c2dc220d37247e278a21cd13c19.jpg",
   badge = "Exclusive Collection"
 }: HeroProps) {
   return (
@@ -48,12 +49,12 @@ export default function Hero({
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-wrap justify-center md:justify-start gap-4"
           >
-            <button className="bg-[#0066cc] text-white px-6 md:px-8 py-3 font-bold hover:bg-[#0052a3] transition-colors uppercase tracking-wider text-xs md:text-sm">
+            <Link to="/shop" className="bg-[#0066cc] text-white px-6 md:px-8 py-3 font-bold hover:bg-[#0052a3] transition-colors uppercase tracking-wider text-xs md:text-sm">
               Shop Now
-            </button>
-            <button className="border-2 border-gray-900 text-gray-900 px-6 md:px-8 py-3 font-bold hover:bg-gray-900 hover:text-white transition-all uppercase tracking-wider text-xs md:text-sm">
+            </Link>
+            <Link to="/about" className="border-2 border-gray-900 text-gray-900 px-6 md:px-8 py-3 font-bold hover:bg-gray-900 hover:text-white transition-all uppercase tracking-wider text-xs md:text-sm">
               Read More
-            </button>
+            </Link>
           </motion.div>
         </div>
         
